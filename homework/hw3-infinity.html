@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Transformation Matrices</title>
+<!-- Credit: Sara Mathieson -->
+
+<script>
+    var canvas;    // DOM object corresponding to the canvas
+    var graphics;  // 2D graphics context for drawing on the canvas
+
+    // this GLOBAL variable is responsible for maintaining the current
+    // set of transformations (3x3)
+    var currMatrix;
+
+    // Used for keeping track of location for figure 8
+    var minX = 0;
+    var maxX = 400;
+    var currX = 0;
+    var currY = 200;
+    var inc = 1;
+
+    // multiply two matrices of arbitrary dimensions (with the
+    // constraint that inner dimensions must match)
+    function matrixMultiply(M1, M2) {
+        var I = M1.length;    // # rows of M1
+        var K = M2.length;    // # rows of M2 = # cols of M1
+        var J = M2[0].length; // # columns of M2
+        
+        var result = [];
+        for (var i=0; i < I; i++) {
+            var row = [];
+            for (var j=0; j < J; j++) {
+                var s = 0;
+                for (var k=0; k < K; k++) {
+                    s += M1[i][k]*M2[k][j]; // match inner dimension indices
+                }
+                row.push(s);
+            }
+            result.push(row);
+        }
+        return result;
+    }
+
+    // this function multiplies the current matrix by another transformation,
+    // then updates the current matrix to the result
+    function pushMatrix(newMatrix) {
+        currMatrix = matrixMultiply(currMatrix, newMatrix); // order very important!
+
+        // note that the setTransform method clear the current matrix and then
+        // sets it to be this new one (it does not build up the transformations!)
+        graphics.setTransform(currMatrix[0][0],currMatrix[1][0],
+                           currMatrix[0][1],currMatrix[1][1],
+                           currMatrix[0][2],currMatrix[1][2]);
+    }
+
+       // Identity: create the 3x3 identity matrix to initialize our currMatrix
+    function identityMatrix() {
+        var I = [[1, 0, 0],
+                [0, 1, 0],
+                [0, 0, 1]];
+        return I;
+    }
+
+    // Scale: create a 3x3 scaling matrix from scalars sx and sy
+    function scaleMatrix(sx, sy) {
+        var S = [[sx, 0, 0],
+                [0, sy, 0],
+                [0, 0, 1]];
+        return S;
+    }
+
+    // Rotate: create a 3x3 rotation matrix from angle theta
+    function rotateMatrix(theta) {
+        var R = [[Math.cos(theta), -Math.sin(theta), 0],
+                [Math.sin(theta), Math.cos(theta), 0],
+                [0, 0, 1]];
+        return R;
+    }
+
+    // Translate: create a 3x3 translation matrix from scalars tx and ty
+    function translateMatrix(tx, ty) {
+        var T = [[1, 0, tx],
+                [0, 1, ty],
+                [0, 0, 1]];
+        return T;
+    }
+
+    // Reflect: create a 3x3 reflection matrix that reflects across the y-axis
+    function reflectMatrix() {
+        var F = [[-1, 0, 0],
+                [0, 1, 0],
+                [0, 0, 1]];
+        return F;
+    }
+
+    // Shear: create a 3x3 shear matrix that shears parallel to the x-axis
+    function shearMatrix(lambda) {
+        var A = [[1, lambda, 0],
+                [0, 1, 0],
+                [0, 0, 1]];
+        return A;
+
+    }
+    
+    function draw() {
+        graphics.beginPath();
+        graphics.arc(currX - 25, currY - 25, 25, 0, 2*Math.PI);
+        graphics.fillStyle = "red";
+        graphics.strokeStyle = "red";
+        graphics.stroke();
+        graphics.fill();
+
+        if(currX >= 0 && currX <= canvas.width) {
+            currX += inc;
+        } else {
+            // If out of bounds, reverse X direction
+            inc *= -1;
+            currX += inc;
+        }
+
+        currY = (inc * 100 * Math.sin((2 * Math.PI / canvas.width) * currX)) + 200;
+
+    }
+
+    function main() {
+        canvas = document.getElementById("theCanvas");
+        graphics = canvas.getContext("2d");
+        currMatrix = identityMatrix();
+        
+        setInterval(function () {
+            graphics.clearRect(0, 0, canvas.width, canvas.height); // clear canvas
+            draw();
+        }, 5); 
+    }
+</script>
+
+
+</head>
+<body onload="main()">
+    <canvas id="theCanvas" width="400" height="400"></canvas>
+</body>
+</html>

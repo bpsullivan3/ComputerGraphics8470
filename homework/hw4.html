@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Bezier Curves</title>
+<!-- Credit: Sara Mathieson -->
+
+<script>
+    var canvas;    // DOM object corresponding to the canvas
+    var graphics;  // 2D graphics context for drawing on the canvas
+    var ultraList;
+    var i = 0;
+    var col = 0;
+    var frequency = 0.1;
+
+    function linearBezierList(n, p0, p1) {
+        var pList = [];
+        for(var i = 0; i <= n; i++) {
+            var px = (i/n)*(p1[0] - p0[0]) + p0[0];
+            var py = (i/n)*(p1[1] - p0[1]) + p0[1];
+            var p = [px, py];
+            pList.push(p);
+        }
+        return pList;
+    }
+
+    function quadBezierList(n, p0, p1, p2) {
+        var pList = [];
+        for(var i = 0; i <= n; i++) {
+            var px = Math.pow(i/n, 2)*(p0[0] - 2*p1[0] + p2[0]) + (i/n)*(-2*p0[0] + 2*p1[0]) + p0[0];
+            var py = Math.pow(i/n, 2)*(p0[1] - 2*p1[1] + p2[1]) + (i/n)*(-2*p0[1] + 2*p1[1]) + p0[1];
+            var p = [px, py];
+            pList.push(p);
+        }
+        return pList;
+    } 
+    
+    function cubicBezierList(n, p0, p1, p2, p3) {
+        var pList = [];
+        for(var i = 0; i <= n; i++) {
+            var px = Math.pow(i/n, 3)*(-1*p0[0] + 3*p1[0] - 3*p2[0] + p3[0]) + Math.pow(i/n, 2)*(3*p0[0] - 6*p1[0] + 3*p2[0]) + (i/n)*(-3*p0[0] + 3*p1[0]) + p0[0];
+            var py = Math.pow(i/n, 3)*(-1*p0[1] + 3*p1[1] - 3*p2[1] + p3[1]) + Math.pow(i/n, 2)*(3*p0[1] - 6*p1[1] + 3*p2[1]) + (i/n)*(-3*p0[1] + 3*p1[1]) + p0[1];
+            var p = [px, py];
+            pList.push(p);
+        }
+        return pList;
+    }
+
+    function drawBezierCurve(pList) {
+        graphics.beginPath(pList[0][0], pList[0][1]);
+        graphics.moveTo(pList[0][0], pList[0][1]);
+
+        for(var i = 1; i < pList.length; i++){
+            graphics.lineTo(pList[i][0], pList[i][1]);
+        }
+        graphics.stroke();
+    }
+
+    function draw() {
+        if ((i + 1) % 101 == 0) {
+            i++;
+        } else if (i < ultraList.length - 1) {
+            graphics.beginPath(ultraList[i][0], ultraList[i][1]);
+            graphics.moveTo(ultraList[i][0], ultraList[i][1]);
+            graphics.lineTo(ultraList[i+1][0], ultraList[i+1][1]);
+
+            //Stolen from https://krazydad.com/tutorials/makecolors.php
+            r = Math.sin(frequency*i + 0) * 127 + 128;
+            g = Math.sin(frequency*i + 2) * 127 + 128;
+            b = Math.sin(frequency*i + 4) * 127 + 128;
+            graphics.strokeStyle = "rgb("+r+","+g+","+b+")";
+
+            graphics.stroke();
+
+            if(col > 32) {
+                col = 0;
+            } else {
+                col++;
+            }
+
+            i++;
+        } else {
+            graphics.clearRect(0, 0, canvas.width, canvas.height);
+            i = 0;
+        }
+    }
+
+    function computePoints() {
+        var n = 100;
+        var lists = [];
+
+        // P
+        var p0 = [25, 375];
+        var p1 = [100, 325];
+        var p2 = [50, 50];
+        var pList1 = quadBezierList(n, p0, p1, p2);
+        lists = lists.concat(pList1);
+
+        var p3 = [250, 25];
+        var p4 = [225, 100];
+        var p5 = [40, 200];
+        var pList2 = cubicBezierList(n, p2, p3, p4, p5);
+        lists = lists.concat(pList2);
+
+        // A
+        var a0 = [75, 375];
+        var a1 = [150, 300];
+        var a2 = [150, 150];
+        var aList1 = quadBezierList(n, a0, a1, a2);
+        lists = lists.concat(aList1);
+
+        var a3 = [150, 300];
+        var a4 = [325, 367.5];
+        var aList2 = quadBezierList(n, a2, a3, a4);
+        lists = lists.concat(aList2);
+
+        var a5 = [75, 300];
+        var a6 = [250, 250];
+        var aList3 = linearBezierList(n, a5, a6);
+        lists = lists.concat(aList3);
+
+        // T
+        var t0 = [175, 125];
+        var t1 = [375, 50];
+        var tList1 = linearBezierList(n, t0, t1);
+        lists = lists.concat(tList1);
+
+        var t2 = [275, 80];
+        var t3 = [350, 350];
+        var t4 = [300, 350];
+        var tList2 = quadBezierList(n, t2, t3, t4);
+        lists = lists.concat(tList2);
+
+        return lists;
+    }
+
+    function main() {
+        canvas = document.getElementById("theCanvas");
+        graphics = canvas.getContext("2d");
+        graphics.lineWidth=3;
+        ultraList = computePoints();
+        var timer = setInterval(function () {
+            draw();
+        }, 10);
+    }
+</script>
+
+
+</head>
+<body onload="main()">
+    <canvas id="theCanvas" width="400" height="400" style="border: 1px solid lightgrey"></canvas>
+</body>
+</html>

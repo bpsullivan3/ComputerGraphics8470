@@ -1,0 +1,91 @@
+
+<!-- saved from url=(0091)http://www.csc.villanova.edu/~mdamian/classes/csc8470/labs/lab01-primitives/lab1-specs.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="viewport" content="initial-scale=1.0">
+
+<link type="text/css" href="./lab1-specs_files/font_faces.css" rel="stylesheet">
+<link type="text/css" href="./lab1-specs_files/site.css" rel="stylesheet">
+<link type="text/css" href="./lab1-specs_files/breakpoints.css" rel="stylesheet"> 
+
+<script src="./lab1-specs_files/jQuery-3.1.1.js.download" type="text/javascript"></script>
+
+<!-- for highlighting -->
+<link href="./lab1-specs_files/prism.css" rel="stylesheet" type="text/css">
+<script src="./lab1-specs_files/prism.js.download" type="text/javascript"></script>
+</head>
+
+<body>
+  <div id="error"><!-- this is filled-out automatically if there is an error  --></div>
+
+  <article>
+  <h1>
+     Lab 1: HTML5 Canvas Primitives
+  </h1>
+
+<p></p>
+The goal of this lab is to begin drawing on the HTML canvas with Javascript. Experiment with the HTML canvas primitives by creating a graphics drawing of your own design.
+
+<h3>Step 1: Download the starter code</h3>
+
+Download <a href="http://www.csc.villanova.edu/~mdamian/classes/csc8470/labs/lab01-primitives/lab1.html">lab1.html</a> (right-click on this link and then choose "Save Link As..."). Open this file in Sublime (or your preferred editor). This file contains some boiler-plate code and one <code>draw</code> method that you'll modify. Study the code and make sure it makes sense. 
+
+<h3>Step 2: Tile pattern</h3>
+
+Inside the function <code>draw()</code>, create a double for loop that goes over all the <code>x</code> values from 0 to <code>canvas.width</code>, and all the <code>y</code> values from 0 to <code>canvas.height</code>. If you run your code now, you should see a completely blue rectangle.
+
+<p></p>
+Next modify <code>pixelColor</code> so that it takes the <code>x</code> and <code>y</code> values of the pixel into account to create a grid or a checkerboard pattern. Try to modify the size of the squares without modifying the <code>fillRect</code> arguments. Experiment with different colors and patterns. Here are some examples below:
+
+<p></p>
+<table>
+	<tbody><tr>
+		<td>
+			<img src="./lab1-specs_files/pattern1.png" alt="grid pattern" width="300" align="left">
+		</td>
+		<td>
+			&nbsp;&nbsp;&nbsp;
+		</td>
+		<td>
+			<img src="./lab1-specs_files/pattern2.png" alt="checkerboard pattern" width="300" align="left">
+		</td>
+		<td>
+			&nbsp;&nbsp;&nbsp;
+		</td>
+		<td>
+			<img src="./lab1-specs_files/pattern3.png" alt="windmill pattern" width="300" align="left">
+		</td>
+	</tr>
+	<tr>
+		<td align="center">
+			grid pattern
+		</td>
+		<td>
+			&nbsp;&nbsp;&nbsp;
+		</td>
+		<td align="center">
+			checkerboard pattern
+		</td>
+				<td>
+			&nbsp;&nbsp;&nbsp;
+		</td>
+		<td align="center">
+			windmill pattern
+		</td>
+	</tr>
+</tbody></table>
+
+<h3>Step 3: Create your own design</h3>
+
+Comment out the code from Step 2. Add code to the <code>draw</code> function that draws something of your own creation. The only requirements are that it uses at least 4 different shapes and at least 2 different colors. It should also be roughly centered in the canvas and of a reasonable size. 
+
+<p></p>
+You may refer back to the class notes on how to draw shapes on the canvas, or you may use <a href="http://www.csc.villanova.edu/~mdamian/classes/csc8470/html5/guide01.html">this guide</a>. 
+
+<p></p>
+You do not have to turn this lab in, but you are welcome to email me your image (take a screenshot and save as a <code>.png</code> file). I will demo some interesting designs in class. Also make sure your partner and others around you are making progress. For labs, feel free to compare code and share ideas.
+
+
+<!--footer-->
+</article>
+
+</body></html>

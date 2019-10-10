@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>HTML Canvas Primitives</title>
+
+
+<script>
+    var canvas;    // DOM object corresponding to the canvas
+    var graphics;  // 2D graphics context for drawing on the canvas
+    
+    function pixelColor1(x, y) {
+        return "green";
+    }
+
+    function pixelColor2(x, y) {
+        return "blue";
+    }
+
+    function draw() {
+        var color;
+        var invert = false;
+        for(var i = 0; i < canvas.width; i++) {
+            // Alternate rows for starting color
+            if ((i / 10) % 2 == 1) {
+                invert = !invert;
+            }
+            for(var j = 0; j < canvas.height; j++) {
+                if (j % 50 > 25 && !invert) {
+                    color = pixelColor1(i, j);
+                    graphics.fillStyle = color;
+                    graphics.fillRect(i, j, 1, 1);
+                } else if (j % 50 > 25 && invert) {
+                    color = pixelColor2(i, j);
+                    graphics.fillStyle = color;
+                    graphics.fillRect(i, j, 1, 1);
+                } else if (invert) {
+                    color = pixelColor1(i, j);
+                    graphics.fillStyle = color;
+                    graphics.fillRect(i, j, 1, 1);
+                } else {
+                    color = pixelColor2(i, j);
+                    graphics.fillStyle = color;
+                    graphics.fillRect(i, j, 1, 1);
+                }
+            }
+        }
+        
+    }
+
+    function main() {
+        canvas = document.getElementById("myCanvas");
+        if(!canvas) {    
+            console.log("Failed to retrieve the canvas");
+            return false;
+        }
+        graphics = canvas.getContext("2d");
+        if(!graphics) {    
+            console.log("Failed to retrieve the 2D context");
+            return false;
+        }
+        draw();  // draw something on the canvas 
+    }
+</script>
+
+
+</head>
+<body onload="main()">
+    <canvas id="myCanvas" width="1000" height="1000">
+        Canvas not supported
+    </canvas>
+</body>
+</html>

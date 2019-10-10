@@ -1,0 +1,118 @@
+<html>
+<head>
+<meta name="viewport" content="initial-scale=1.0" />
+
+<link type="text/css" href="/~mdamian/assets/styles/font_faces.css" rel="stylesheet">
+<link type="text/css" href="/~mdamian/assets/styles/site.css" rel="stylesheet">
+<link type="text/css" href="/~mdamian/assets/styles/breakpoints.css" rel="stylesheet"> 
+
+<script src="/~mdamian/assets/scripts/jQuery-3.1.1.js" type="text/javascript"></script>
+
+<!-- for highlighting -->
+<link href="/~mdamian/assets/prism/prism.css" rel="stylesheet" type="text/css" />
+<script src="/~mdamian/assets/prism/prism.js" type="text/javascript"></script>
+</head>
+
+<body>
+  <div id="error"><!-- this is filled-out automatically if there is an error  --></div>
+
+  <article>
+  <h1>
+     Lab #2: DDA Rasterizer
+  </h1>
+
+<p></p>
+<i> Credit: Based on notes from Sara Mathieson</i>
+
+<p></p>
+Rasterizing lines is one of many fundamental topics in a graphics course. The goal of this lab is to implement and test a simple DDA rasterizer. For labs, feel free to compare code and share ideas. Also make sure that others around you are making progress.
+
+
+<h3>Step 1: Download the starter code</h3>
+
+Download <a href="lab2.html">lab2.html</a> (right-click on this link and then choose "Save As"). Open this file in Sublime (or your preferred editor). This file contains some boiler-plate code and two methods that you'll implement.
+
+<p></p>
+
+<h3>Step 2: The drawLine Function</h3>
+
+  Implement the function <code>drawLine</code> using the DDA rasterization algorithm described in class. Note that this function takes in five arguments in this order: the (x,y) coordinates of the first point, the (x, y) coordinates of the second endpoint, and the line color.   
+
+  <p></p>
+  Your method should not use any built-in line drawing functions. Instead, your method should color individual pixels using the <code>setPixel</code> function from your starter code. 
+
+<!--  <pre>    <font color=blue>graphics.fillRect(x,y,1,1)</font> <font color=green>// fill a 1x1 rectangle with an upper-left corner at (x,y)</pre></font> -->
+
+  <p></p> 
+  This page of <a href="http://www.w3schools.com/colors/colors_names.asp">HTML Color Names</a> is useful for pre-defined colors.
+
+  <h3>Step 3: Testing</h3>
+
+  As you are implementing the <code>drawLine</code> method, make sure to test it out by calling it from the <code>draw</code> method. Your <code>draw</code> method will end up consisting of several calls to your <code>drawLine</code> method. Test it out on lines of various slopes and sizes. Here are some examples:
+  <pre>    drawLineFast(50, 300, 350, 100, "magenta", 1);  // slope < 1 
+    drawLineFast(350, 100, 50, 300, "purple", 1);   // switch points; code should still work
+    drawLineFast(200, 80, 100, 380, "red", 1);      // slope > 1     
+    drawLineFast(50, 200, 350, 200, "green", 1);    // slope = 0
+    drawLineFast(250, 50, 250, 350, "blue", 1);     // slope = &#x221e; </pre>
+  
+  These calls should produce an image similar to the one below:
+  <p></p>
+  <center>
+  <img src="test.png" width=300px alt="example"/>
+  </center>
+
+  <h3>Step 4: Canvas Grid</h3>
+
+  Now that your <code>drawLine</code> function works, let's draw something on the canvas. We'll start by filling the canvas with a grid pattern (which we may use in the next step).
+
+  <p></p>
+  Comment out the code from the previous step. Inside the function <code>draw</code>, write two independent <code>for</code> loops that create a grid that covers the entire canvas (using calls to the <code>drawLine</code> method). The example below shows a 10x10 lightgrey grid on a 400x400 canvas (so each grid cell is 40x40 pixels). You may choose any grid size or color you want. 
+
+  <p></p>
+  <center>
+  <img src="grid.png" width=300px alt="example"/>
+  </center>
+
+  <h3>Step 5: Snowflake</h3>
+  Finally, draw a snowflake or another shape that uses lines with different slopes. Here is an example:
+
+  <p></p>
+  <center>
+  <img src="snowflake.png" width=300px alt="example"/>
+  </center>
+
+  <p></p>
+
+  Again, you may only use calls to the <code>drawLine</code> method. You may find the grid useful in figuring out endpoint coordinates.
+ <p>
+
+  <!--As another test, try out a line with endpoints (50,350) and (75,50). It might not look very good. Why is that? Modify your line algorithm to account for cases like this. -->
+
+
+  <h3>Step 6: Extras</h3>
+
+  <p></p>
+
+  (Note: not for extra credit this time, just for more practice with JavaScript functions and HTML canvas.) <p> 
+
+  <ul>
+    <li> 
+      Experiment with your shape: different pattern, different color, different size.
+    </li>
+
+    <li> 
+      Augment your line drawing method to include a line width argument.
+    </li>
+
+    <li> 
+      Going further: <i> automate </i> your snowflake drawing in a separate method, maybe something that takes as arguments the center position of the snowflake and/or the radius. Use this method to draw multiple snowflakes or randomly positioned snowflakes. You may need a finer grid for this step, or no grid at all.  
+    </li>
+  </ul>
+
+<p></p>
+You do not have to turn this lab in, but you are welcome to email me your image (take a screenshot and save as a <code>.png</code> file). Throughout the semester I'll often demo examples of excellent student work. If you prefer I not show your work, please let me know. 
+
+<!--footer-->
+</article>
+</body>
+</html>

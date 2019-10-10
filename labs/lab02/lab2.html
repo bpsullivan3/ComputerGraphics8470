@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Snowflake</title>
+
+
+<script>
+    var canvas;    // DOM object corresponding to the canvas
+    var graphics;  // 2D graphics context for drawing on the canvas
+
+    function randomColor() {
+        const hexDigits = '0123456789ABCDEF';
+        let color = '#';
+        for(let i = 0; i < 6; i++){
+            var index = Math.floor(Math.random() * 16);
+            color += hexDigits[index];
+        }
+        return color;
+    }
+
+    function setPixel(x, y, color, size)
+    {
+        graphics.fillStyle = color;
+        graphics.fillRect(x, y, size, size);
+    }
+
+    function drawLineX(x1, y1, x2, y2, color, size){
+        let dx = x2- x1;
+        let dy = y2 - y1;
+
+        let m = dy / dx;
+        let y = y1;
+
+        for(let x = x1; x <= x2; x++) {
+            setPixel(x, Math.round(y), color, size);
+            y += m;
+        }
+    }
+
+    function drawLineY(x1, y1, x2, y2, color, size){
+        let dx = x2- x1;
+        let dy = y2 - y1;
+
+        let m = dx / dy;
+        let x = x1;
+
+        for(let y = y1; y <= y2; y++) {
+            setPixel(Math.round(x), y, color, size);
+            x += m;
+        }
+    }
+
+    function drawLine(x1, y1, x2, y2, color, size) {
+        dy = y2 - y1;
+        dx = x2 - x1;
+        
+        if(dx == 0 && dy == 0) { setPixel(x1, y1, color, size); return; }
+
+        if(Math.abs(dx) >= Math.abs(dy)) {
+            if (x2 > x1) drawLineX(x1, y1, x2, y2, color, size);
+            else drawLineX(x2, y2, x1, y1, color, size);
+        } else {
+            if (y2 > y1) drawLineY(x1, y1, x2, y2, color, size);
+            else drawLineY(x2, y2, x1, y1, color, size);
+        }
+    }
+    
+    function draw() {
+        let x1 = Math.floor(Math.random() * canvas.width);
+        let x2 = Math.floor(Math.random() * canvas.width);
+        let y1 = Math.floor(Math.random() * canvas.height);
+        let y2 = Math.floor(Math.random() * canvas.height);
+        drawLine(x1, y1, x2, y2, randomColor(), 3);
+        //drawLine(200, 40, 200, 360, randomColor(), 3); 
+        //drawLine(40, 200, 360, 200, randomColor(), 3);
+        //drawLine(80, 320, 320, 80, randomColor(), 3);
+    }
+
+    function main() {
+        canvas = document.getElementById("theCanvas");
+        graphics = canvas.getContext("2d");
+
+        for(let i = 0; i < canvas.width; i += 40) {
+            graphics.fillStyle = "lightgrey";
+            graphics.fillRect(i, 0, 1, canvas.height);
+        }
+
+        for(let j = 0; j < canvas.height; j += 40) {
+            graphics.fillStyle = "lightgrey";
+            graphics.fillRect(0, j, canvas.width, 1);
+        }
+
+        setInterval(function () {
+            graphics.clearRect(0, 0, canvas.width, canvas.height);
+            for(let i = 0; i < canvas.width; i += 40) {
+                graphics.fillStyle = "lightgrey";
+                graphics.fillRect(i, 0, 1, canvas.height);
+            }
+
+            for(let j = 0; j < canvas.height; j += 40) {
+                graphics.fillStyle = "lightgrey";
+                graphics.fillRect(0, j, canvas.width, 1);
+            }
+            draw();
+        }, 500);  // draw something on the canvas
+    }
+</script>
+
+
+</head>
+<body onload="main()">
+    <canvas id="theCanvas" width="401" height="401"></canvas>
+</body>
+</html>

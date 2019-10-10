@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Bresenham's Rasterizer</title>
+
+
+<script>
+    var canvas;    // DOM object corresponding to the canvas
+    var graphics;  // 2D graphics context for drawing on the canvas
+
+    function randomColor() {
+        // color = '#2EF3G5'
+        const hexDigits = '0123456789ABCDEF';
+        let color = '#';
+        for(let i = 0; i < 6; i++){
+            var index = Math.floor(Math.random() * 16);
+            color += hexDigits[index];
+        }
+        return color;
+    }
+
+    function setPixel(x, y, color, size)
+    {
+        graphics.fillStyle = color;
+        graphics.fillRect(x, y, size, size);
+    }
+
+    function drawLineFastX(x1, y1, x2, y2, color, size){
+        let dx = x2- x1;
+        let dy = Math.abs(y2 - y1);
+        let twoDx = dx + dx;
+        let twoDy = dy + dy;
+
+        let dHat = twoDy - dx;
+
+        let inc = 1;
+        if (y2 < y1) inc = -1;
+
+        for(let x = x1, y = y1; x <= x2; x++) {
+            setPixel(x, y, color, size);
+            if(dHat <= 0) {
+                dHat += twoDy;
+            } else {
+                dHat += twoDy - twoDx;
+                y += inc;
+            }
+        }
+    }
+
+    function drawLineFastY(x1, y1, x2, y2, color, size){
+        let dx = Math.abs(x2- x1);
+        let dy = y2 - y1;
+        let twoDx = dx + dx;
+        let twoDy = dy + dy;
+
+        let dHat = twoDx - dy;
+
+        let inc = 1;
+        if(x2 < x1) inc = -1;
+
+        for(let y = y1, x = x1; y <= y2; y++) {
+            setPixel(x, y, color, size);
+            if(dHat <= 0) {
+                dHat += twoDx;
+            } else {
+                dHat += twoDx - twoDy;
+                x += inc;
+            }
+        }
+    }
+
+    function drawLineFast(x1, y1, x2, y2, color, size) {
+        if ((Math.abs(y2 - y1) < Math.abs(x2 - x1))){
+            if(x1 < x2) drawLineFastX(x1, y1, x2, y2, color, size);
+            else drawLineFastX(x2, y2, x1, y1, color, size);
+        } else {
+            if(y1 < y2) drawLineFastY(x1, y1, x2, y2, color, size);
+            else drawLineFastY(x2, y2, x1, y1, color, size);
+        }
+    }
+
+    // Draws a star centered at (cx, cy), with outer points  
+    // at distance outerR, and inner points at distance innerR 
+    function drawStar(cx, cy, outerR, innerR, color, size) {
+
+        var thetaStep = 2*Math.PI/5;   // angle between consecutive outer/inner points
+        var randomizeStart= (Math.random() * 2) * Math.PI; // Randomize what angle the stars will be (between 0 and 2PI)
+       
+       // Compute the outer coordinate pairs
+        var theta = randomizeStart - thetaStep; // starting angle for outer points
+
+        var outerCoords = [];
+        for(var i = 0; i < 5; i++){
+            var xcoord = cx + Math.round(outerR * Math.cos(theta));
+            var ycoord = cy + Math.round(outerR * Math.sin(theta));
+            outerCoords[i] = [xcoord, ycoord];
+
+            theta += thetaStep;
+        }
+
+        // Compute the inner coordinate pairs
+        theta = randomizeStart - thetaStep/2;   // initial angle for the first inner point
+
+        var innerCoords = [];
+        for(var i = 0; i < 5; i++){
+            var xcoord = cx + Math.round(innerR * Math.cos(theta));
+            var ycoord = cy + Math.round(innerR * Math.sin(theta));
+            innerCoords[i] = [xcoord, ycoord];
+
+            theta += thetaStep;
+        }
+
+        drawLineFast(innerCoords[4][0], innerCoords[4][1], outerCoords[0][0], outerCoords[0][1], color, size);
+        for(var i = 0; i < 5; i++){
+            drawLineFast(outerCoords[i][0], outerCoords[i][1], innerCoords[i][0], innerCoords[i][1], color, size);
+            if(i != 4) {
+                drawLineFast(innerCoords[i][0], innerCoords[i][1], outerCoords[i+1][0], outerCoords[i+1][1], color, size);
+            }
+        }
+    }
+    
+    function draw() {
+        drawLine(80, 80, 320, 320, randomColor(), 3);
+        drawLine(200, 40, 200, 360, randomColor(), 3); 
+        drawLine(40, 200, 360, 200, randomColor(), 3);
+        drawLine(80, 320, 320, 80, randomColor(), 3);
+    }
+
+    function main() {
+        canvas = document.getElementById("theCanvas");
+        graphics = canvas.getContext("2d");
+
+        // Every half-second, place 6 stars on a new canvas
+        setInterval(function () {
+            graphics.clearRect(0, 0, canvas.width, canvas.height);
+            drawStar(Math.floor(Math.random() * 400), Math.floor(Math.random() * 400), 40, 20, randomColor(), 1);
+            drawStar(Math.floor(Math.random() * 400), Math.floor(Math.random() * 400), 40, 20, randomColor(), 1)
+            drawStar(Math.floor(Math.random() * 400), Math.floor(Math.random() * 400), 40, 20, randomColor(), 1);
+            drawStar(Math.floor(Math.random() * 400), Math.floor(Math.random() * 400), 40, 20, randomColor(), 1);
+            drawStar(Math.floor(Math.random() * 400), Math.floor(Math.random() * 400), 40, 20, randomColor(), 1);
+            drawStar(Math.floor(Math.random() * 400), Math.floor(Math.random() * 400), 40, 20, randomColor(), 1);
+        }, 500);
+    }
+</script>
+
+
+</head>
+<body onload="main()">
+    <canvas id="theCanvas" width="401" height="401" style="border: 1px solid lightgrey"></canvas>
+</body>
+</html>

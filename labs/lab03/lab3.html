@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>2D Canvas Transformations</title>
+
+
+<script>
+    var canvas;         // DOM object corresponding to the canvas
+    var graphics;       // 2D graphics context for drawing on the canvas
+    var angle = 0.1;    // rotate diamond by this angle each time
+    var radius = 160;   // circle radius
+
+    // Draw a square of side 2 centered at (0,0) - subject to transformations
+    function fillSquare(color) {
+        graphics.fillStyle = color;
+        // Do NOT change the arguments to fillRect
+        graphics.fillRect(-1, -1, 2, 2);
+    }
+
+    // Draw a circle of radius 1 centered at (0,0) - subject to transformations
+    function fillCircle(color) {
+        graphics.beginPath();
+        // Do NOT change the arguments to arc
+        graphics.arc(0, 0, 1, 0, 2*Math.PI, false);
+        graphics.fillStyle = color;
+        graphics.fill();
+    }
+
+    // Draw a triangle with vertices (-1, 0), (0,1), (1, 0) - subject to transformations
+    function fillTriangle(color) {
+        graphics.beginPath();
+        // Do NOT change the arguments below
+        graphics.moveTo(0,-1);
+        graphics.lineTo(1,0);
+        graphics.lineTo(-1,0);
+        graphics.closePath();
+        graphics.fillStyle = color;
+        graphics.fill();
+    }
+
+    function draw()
+    {
+        // clear the canvas
+        graphics.clearRect(0, 0, canvas.width, canvas.height);
+
+        // add some transparency to all objects, to help see through
+        graphics.globalAlpha = 0.8;
+
+        // Step 1: center circle
+        graphics.save();
+        graphics.translate(200, 200);
+        graphics.scale(radius, radius);
+        fillCircle('red');
+        graphics.restore();
+
+        // Step 2: center diamond
+        // graphics.save();
+        // graphics.translate(200, 200);
+        // graphics.rotate(angle);
+        // graphics.translate(0, radius);
+        // angle += 0.1;
+        // graphics.scale(40, 80);
+        // graphics.rotate(Math.PI / 4);
+        // fillSquare('red');
+        // graphics.restore();
+
+        graphics.save();
+        graphics.translate(200, 200);
+        graphics.rotate(angle);
+        angle += 0.1;
+        for (var x = 0, y = 0; x < Math.PI * 4; x += Math.PI / 128, y+=0.1) {
+            graphics.save();
+            graphics.scale(3, 3);
+            graphics.rotate(-x);
+            graphics.translate(0, y);
+            fillCircle('black');
+            graphics.restore();
+        }
+        graphics.restore();
+
+        graphics.save();
+        graphics.translate(200, 200);
+        graphics.rotate(angle);
+        angle += 0.1;
+        for (var x = 0, y = 0; x < Math.PI * 4; x += Math.PI / 128, y+=0.1) {
+            graphics.save();
+            graphics.scale(3, -3);
+            graphics.rotate(x);
+            graphics.translate(0, y);
+            fillCircle('white');
+            graphics.restore();
+        }
+        graphics.restore();
+
+    }
+
+    function main() {
+        canvas = document.getElementById("theCanvas");
+        graphics = canvas.getContext("2d");
+        //draw();  // draw something on the canvas
+
+        // animation part
+        var timer = setInterval(draw, 50);
+
+    }
+</script>
+
+
+</head>
+<body onload="main()">
+    <canvas id="theCanvas" width="400" height="400" style="border:1px solid lightgrey;"></canvas>
+</body>
+</html>
