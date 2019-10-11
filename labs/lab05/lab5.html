@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<head>
+<title>Pyramid</title>
+<script src="../../lib/three.js"></script>
+
+<!-- Modified from the MeshFaceMaterial.html example in our textbook 
+    (Introduction to Computer Graphics) by David J. Eck -->
+
+<script>
+    var scene, camera, renderer; // Three.js rendering basics
+    var canvas; // The canvas on which the image is rendered
+    var pyramid;
+    var inc_x = 0.1;
+    var inc_y = 0.02;
+    
+
+    // Create a camera, sitting on the positive z-axis.  The camera is not part of the scene
+    function createCamera() {
+        camera = new THREE.PerspectiveCamera(30, canvas.width/canvas.height, 1, 30);
+        camera.position.z = 6;
+    }
+
+    // Create the scene. This function is called once, as soon as the page loads
+    // The renderer has already been created before this function is called
+    function createScene() {
+        
+        renderer.setClearColor(0); // Set background color (0, or 0x000000, is black)
+        scene = new THREE.Scene(); // Create a new scene which we can add objects to
+        
+        // Set up the geometry for our pyramid
+        var pyramidGeom = new THREE.Geometry();
+    
+        // TODO 2: create the (x,y,z) points for the 5 vertices of our pyramid
+        pyramidGeom.vertices = [  // array of Vector3 giving vertex coordinates
+            new THREE.Vector3( 1, 0, 1),  // vertex number 0
+            new THREE.Vector3( 1, 0, -1),  // vertex number 1
+            new THREE.Vector3( -1, 0, -1),  // vertex number 2
+            new THREE.Vector3( -1, 0, 1),  // vertex number 3
+            new THREE.Vector3( 0, 1, 0)   // vertex number 4
+        ];
+        
+        // TODO 3: using the indices of the vertices above, create triangular faces
+        pyramidGeom.faces = [  // array of Face3 giving the triangular faces
+            new THREE.Face3( 3, 2, 1),  // one half of the bottom face
+            new THREE.Face3( 3, 1, 0),  // other half of the bottom face
+            new THREE.Face3( 0, 4, 3),  // remaining faces are the four sides
+            new THREE.Face3( 3, 4, 2),
+            new THREE.Face3( 2, 4, 1),
+            new THREE.Face3( 1, 4, 0)
+        ];
+    
+        // Compute normals so we know which way is facing "out"
+        pyramidGeom.computeFaceNormals();
+
+        // Create a different material for each face of the pyramid
+        var pyramidMat = new THREE.MeshFaceMaterial ( [ // an array of Materials
+            new THREE.MeshBasicMaterial( {color: "red"} ),    // bottom face
+            new THREE.MeshBasicMaterial( {color: "blue"} ),   // side faces
+            new THREE.MeshBasicMaterial( {color: "yellow"} ),  
+            new THREE.MeshBasicMaterial( {color: "green"} ),  
+            new THREE.MeshBasicMaterial( {color: "magenta"} ) 
+        ] ); 
+                
+        // Map materials to faces
+        pyramidGeom.faces[0].materialIndex = 0;
+        for (var i = 1; i <= 5; i++) {
+            pyramidGeom.faces[i].materialIndex = i-1;
+        }
+
+        pyramid = new THREE.Mesh(pyramidGeom, pyramidMat);
+        pyramid.rotation.set(Math.PI/8, 0, 0);    
+        scene.add(pyramid);
+    }
+
+    // Render the scene. This is called for each frame of the animation
+    function render() {
+        // schedule the next render
+        requestAnimationFrame( render );
+
+        pyramid.rotation.y += 0.1;
+
+        if (camera.position.x <= -3 || camera.position.x >= 3) {
+            inc_x *= -1;
+        }
+        camera.position.x += inc_x;
+
+        if (camera.position.y <= -1 || camera.position.y >= 2) {
+            inc_y *= -1;
+        }
+        camera.position.y += inc_y;
+
+        renderer.render(scene, camera);
+    }
+
+    //----------------------------------------------------------------------------------
+
+    function main() {
+        try {
+            canvas = document.getElementById("glcanvas");
+            renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true} );
+        }
+        catch (e) {
+            document.getElementById("canvas-holder").innerHTML = "<h3><b>WebGL is not available.</b><h3>";
+            return;
+        }
+    
+        // create camera
+        createCamera();
+        
+        // create scene 
+        createScene();
+
+        
+        // render scene
+        render();
+    }
+
+</script>
+
+</head>
+<body onload="main()">
+<div id="canvas-holder">
+    <canvas id="glcanvas" width="600" height="300"></canvas>
+</div>
+</body>
+</html>
