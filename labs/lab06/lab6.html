@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<head>
+<title>Robotic Arm</title>
+<script src="../../lib/three.js"></script>
+<script src="../../lib/KeyboardState.js"></script>
+
+<script>
+    var scene, camera, renderer; // Three.js rendering basics.
+    var canvas; // The canvas on which the image is rendered.
+    var ux = 1;
+    var uy = 0.25;
+    var uz = 0.25;
+
+    var keyboard = new KeyboardState();
+
+    // Parts of our robotic arm 
+    var upperArm, lowerArm; 
+    
+    // Create a camera, sitting on the positive z-axis.  The camera is not part of the scene
+    function createCamera() {
+        camera = new THREE.PerspectiveCamera(25, canvas.width/canvas.height, 1, 30);
+        camera.position.set(0, 0, 20);
+    }
+
+    // Create the scene. This function is called once, as soon as the page loads.
+    // The renderer has already been created before this function is called.
+    function createScene() {
+        
+        renderer.setClearColor(0); // Set background color (0, or 0x000000, is black).
+        scene = new THREE.Scene(); // Create a new scene which we can add objects to.
+        
+        // Set up arm geometry and material
+        var armGeom = new THREE.BoxGeometry(2*ux,2*uy,2*uz);
+
+        // Draw each face of the arm in a different color
+        var armMat = [  // An array of materials
+            new THREE.MeshBasicMaterial( { color: "red" } ),     // +x face
+            new THREE.MeshBasicMaterial( { color: "cyan" } ),    // -x face
+            new THREE.MeshBasicMaterial( { color: "green" } ),   // +y face
+            new THREE.MeshBasicMaterial( { color: "magenta" } ), // -y face
+            new THREE.MeshBasicMaterial( { color: "yellow" } ),  // +z face
+            new THREE.MeshBasicMaterial( { color: "blue" } )     // -z face
+        ];
+
+        // Set up the mesh for the upper arm
+        var upperMesh = new THREE.Mesh(armGeom, armMat);
+        var lowerMesh = new THREE.Mesh(armGeom, armMat);
+        upperArm = new THREE.Object3D();
+        lowerArm = new THREE.Object3D();
+        upperArm.add(upperMesh);
+        lowerArm.add(lowerMesh);
+        upperArm.add(lowerArm);
+        scene.add(upperArm);
+
+        lowerArm.position.x += 2 * ux;
+        lowerMesh.position.x += ux;
+        upperMesh.position.x += ux;
+
+        upperArm.rotation.set(0.2,-0.4,0); // just to get a better view
+    }
+
+    function update() {
+        keyboard.update();
+
+        if ( keyboard.pressed("left") ) {
+            upperArm.rotation.z -= Math.PI/64;
+        }
+        if ( keyboard.pressed("right") ) {
+            upperArm.rotation.z += Math.PI/64;
+        }
+        if ( keyboard.pressed("down") ) {
+            lowerArm.rotation.z -= Math.PI/32;
+        }
+        if ( keyboard.pressed("up") ) {
+            lowerArm.rotation.z += Math.PI/32;
+        }
+    }
+
+    // Render the scene. This is called for each frame of the animation.
+    function render() {
+        requestAnimationFrame( render );
+        renderer.render(scene, camera);
+
+        update();
+    }
+
+    //----------------------------------------------------------------------------------
+
+    // The main() function is called by the onload event when the document has loaded.
+    function main() {
+        try {
+            canvas = document.getElementById("glcanvas");
+            renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true} );
+        }
+        catch (e) {
+            document.getElementById("canvas-holder").innerHTML = "<h3><b>WebGL is not available.</b><h3>";
+            return;
+        }
+    
+        // create camera
+        createCamera();
+        
+        // create scene 
+        createScene();
+
+        // render scene
+        render();
+    }
+
+</script>
+
+</head>
+<body onload="main()">
+<div id="canvas-holder">
+    <canvas id="glcanvas" width="600" height="400"></canvas>
+</div>
+</body>
+</html>
