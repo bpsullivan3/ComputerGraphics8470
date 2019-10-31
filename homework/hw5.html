@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<head>
+<title>Hierarchical Modeling</title>
+<script src="../lib/three.js"></script>
+<script src="../lib/KeyboardState.js"></script>
+
+
+<script>
+    var scene, camera, renderer; // Three.js rendering basics
+    var canvas; // The canvas on which the image is rendered
+    var inc = 0.1;
+    var upperArm;
+    var lowerArm;
+    var shade;
+
+    // var keyboard = new KeyboardState();
+
+    // Create a camera, sitting on the positive z-axis.  The camera is not part of the scene
+    function createCamera() {
+        camera = new THREE.PerspectiveCamera(25, canvas.width/canvas.height, 1, 30);
+        camera.position.set(0, 0, 20);
+    }
+
+    // Create the scene. This function is called once, as soon as the page loads.
+    // The renderer has already been created before this function is called.
+    function createScene() {
+        
+        renderer.setClearColor(0); // Set background color (0, or 0x000000, is black)
+        scene = new THREE.Scene(); // Create a new scene which we can add objects to
+
+        // PlaneGeometry(width, height)
+        var geometry = new THREE.PlaneGeometry( 10, 5 );
+        var material = new THREE.MeshBasicMaterial({color: 0xCCAAAA, side: THREE.DoubleSide});
+        var plane = new THREE.Mesh( geometry, material );
+        plane.rotation.x = Math.PI/2 + 0.5;
+        plane.position.y -= 3;
+        scene.add( plane );
+        
+        var baseMat = [  // An array of materials
+            new THREE.MeshBasicMaterial( { color: "red" } ),     // +x face
+            new THREE.MeshBasicMaterial( { color: "cyan" } ),    // -x face
+            new THREE.MeshBasicMaterial( { color: "green" } ),   // +y face
+            new THREE.MeshBasicMaterial( { color: "magenta" } ), // -y face
+            new THREE.MeshBasicMaterial( { color: "yellow" } ),  // +z face
+            new THREE.MeshBasicMaterial( { color: "blue" } )     // -z face
+        ];
+        // SphereGeometry(radius, horizSeg, vertSeg, horizStartAng, horizLenAngle, vertStartAng, vertLenAng )
+        var baseGeom = new THREE.SphereGeometry(2, 32, 32, 0, 2*Math.PI, 0, Math.PI/2 );
+        var baseMesh = new THREE.Mesh(baseGeom, baseMat);
+        baseMesh.scale.y = 0.15; // squeeze vertically
+
+        // CircleGeometry(radius, segments) 
+        var capGeom = new THREE.CircleGeometry(3.5, 32);
+        var capMesh = new THREE.Mesh(capGeom, baseMat);
+        capMesh.rotation.x = Math.PI / 2;
+        baseMesh.add(capMesh);
+
+        // add baseMesh to parent container (which you'll need to create)
+        var baseLamp = new THREE.Object3D();
+        baseLamp.add(baseMesh);
+        baseLamp.scale.set(0.5, 0.5, 0.5);
+        baseLamp.rotation.x = 0.25;
+        baseLamp.position.x = -3;
+        baseLamp.position.y = -3;
+        scene.add(baseLamp);
+
+        var armMat = baseMat;  // material for the arm, can be the same as for base
+        // CylinderGeometry(radiusTop, radiusBottom, height, radialSeg, heightSeg) 
+        var armGeom = new THREE.CylinderGeometry(0.5, 0.5, 5, 32, 32);
+        var lowerArmMesh = new THREE.Mesh(armGeom, armMat);
+        lowerArmMesh.position.y += 2.5; // relative to parent container (which you'll need to create) 
+        var lowerArm = new THREE.Object3D();
+        lowerArm.rotation.z = -Math.PI/16;
+        lowerArm.add(lowerArmMesh);
+        baseLamp.add(lowerArm);
+
+        var upperArmMesh = new THREE.Mesh(armGeom, armMat);
+        upperArmMesh.position.y += 2.5;
+        upperArm = new THREE.Object3D();
+        upperArm.position.y += 5;
+        upperArm.rotation.z = -Math.PI/4;
+        upperArm.add(upperArmMesh);
+        lowerArm.add(upperArm);
+
+        var shadeMat = new THREE.MeshBasicMaterial( { color: "orange", side: THREE.DoubleSide } );
+        // CylinderGeometry(radiusTop, radiusBottom, height, radialSeg, heightSeg, open?) 
+        var shadeGeom = new THREE.CylinderGeometry(2, 0.1, 4, 16, 1, true);
+        var shadeMesh = new THREE.Mesh(shadeGeom, shadeMat);
+        shadeMesh.position.y += 2; // relative to parent, which should be an empty container
+        shade = new THREE.Object3D();
+        shade.rotation.z = -Math.PI/4;
+        shade.position.y += 5;
+        upperArm.add(shade);
+        shade.add(shadeMesh);
+    }
+
+    // Render the scene. This is called for each frame of the animation.
+    function render() {
+
+        // Loop
+        requestAnimationFrame(render);
+
+        if(camera.position.z <= 15 || camera.position.z >= 25) inc *= -1;
+        camera.rotation.y += inc/10;
+        camera.position.x += inc;
+        camera.position.z += inc;
+
+        // Re-render the scene
+        renderer.render(scene, camera);
+    }
+
+    //----------------------------------------------------------------------------------
+
+    // The main() function is called by the onload event when the document has loaded.
+    function main() {
+        try {
+            canvas = document.getElementById("glcanvas");
+            renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true} );
+        }
+        catch (e) {
+            document.getElementById("canvas-holder").innerHTML = "<h3><b>WebGL is not available.</b><h3>";
+            return;
+        }
+    
+        // create camera
+        createCamera();
+        
+        // create scene 
+        createScene();
+
+        // render scene
+        render();
+    }
+
+</script>
+
+</head>
+<body onload="main()">
+<div id="canvas-holder">
+    <canvas id="glcanvas" width="600" height="400"></canvas>
+</div>
+</body>
+</html>
