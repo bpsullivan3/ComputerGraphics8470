@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<head>
+<title>Luxo Lamp</title>
+<script src="../lib/three.js"></script>
+<script src="../lib/OrbitControls.js"></script>
+<script src="../lib/KeyboardState.js"></script>
+
+<script>
+    var scene, camera, renderer; // Three.js rendering basics.
+
+    var canvas; // The canvas on which the image is rendered.
+
+    var mouse; // Used to navigate the scene with the mouse
+
+    // Keep track of time
+    var clock = new THREE.Clock();  
+
+    // Time at the beginning of animation 
+    var startTime = clock.getElapsedTime();
+
+    var keyboard = new KeyboardState();
+    var eyeLight;
+
+    // Global lamp object
+    var lamp;
+
+    // The parts of our lamp
+    var base, lowerArm, upperArm, shade; 
+
+    // Luxo Jr. Parts
+    var miniLamp;
+    var miniBase, miniLowerArm, miniUpperArm, miniShade;
+
+    // timestamp, lamp.x, lamp.y, base.rotation.z, lower.rotation.z, upper.rotation.z, shade.rotation.z]
+    var keyframes = [
+    [0.00, -10, -4, 0, 1, -2.36, -1],
+    [0.25, -10, -4, 0, -0.03, -0.23, -1.25],
+    [0.50, -2.5, 0, 1, 1.08, -1.96, -1.5],
+    [0.75, 5, -2, 0.5, 0, -0.92, -1.25],
+    [1.00, 10, -4, 0, 1.2, -2.35, -1],
+    ];
+
+    // timestamp, miniShade.rotation.z, miniShade.rotation.y, miniUpperArm.rotation.z
+    var miniKeyframes = [
+    [0, Math.PI/8, 0, 1],
+    [0.12, Math.PI/3, 0, 1.5],
+    [0.25, Math.PI/3, Math.PI/8, 1.5],
+    [0.37, Math.PI/3, 0, 1.5],
+    [0.5, Math.PI/3, -Math.PI/8, 1.5],
+    [0.62, Math.PI/3, 0, 1.5],
+    [0.75, Math.PI/3, Math.PI/8, 1.5],
+    [0.87, Math.PI/3, 0, 1.5],
+    [1, Math.PI/3, -Math.PI/8, 1.5]
+    ];
+
+    // keyframes, duration of one animation cycle (in seconds), current time
+    function keyframeInterp(keyframes, cycleTime, currentTime) {
+
+        var keys=[];  // array of interpolated values
+        var nKeys = keyframes[0].length-1;  // number of keys
+
+        // find time elapsed within the current cycle and scale to [0,1]
+        var time = ((currentTime - startTime) % cycleTime) / cycleTime; 
+
+        // find the next keyframe based on time
+        for (var i = 0; i < keyframes.length; i++) {
+            if (time < keyframes[i][0]) break;
+        }
+        i = i-1; // previous keyframe is at index i-1
+
+        // scale interpolation parameter t to interval [0,1]
+        var t = (time - keyframes[i][0]) / (keyframes[i+1][0] - keyframes[i][0]); 
+
+        // linear interpolation between keyframes i and i+1 
+        for(var j = 1; j <= nKeys; j++)
+            keys.push((1-t) * keyframes[i][j] + t * keyframes[i+1][j]); 
+        
+        return keys;
+    }
+
+    // Create a camera, sitting on the positive z-axis.  The camera is not part of the scene
+    function createCamera() {
+        camera = new THREE.PerspectiveCamera(40, canvas.width/canvas.height, 0.1, 500);
+        camera.position.set(0,3,40);
+
+        // Add orbit control to allow the camera orbit around
+        mouse = new THREE.OrbitControls(camera, renderer.domElement);
+    }
+
+    // Create the lamp base with specified radius and height
+    function createBase(radius, height)
+    {
+        var base = new THREE.Object3D();
+
+        var mat = new THREE.MeshPhongMaterial( { color: "gray" } );
+
+        // SphereGeometry(radius, horizSeg, vertSeg, horizStartAng, horizLenAngle, vertStartAng, vertLenAng )
+        var geom = new THREE.SphereGeometry(radius, 32, 32, 0, 2*Math.PI, 0, Math.PI/2 );
+        var mesh = new THREE.Mesh(geom, mat);
+        mesh.scale.y = height/radius;
+        mesh.position.y = -height;
+        base.add(mesh);
+
+        // CircleGeometry(radius, segments) 
+        var capGeom = new THREE.CircleGeometry(radius, 32);
+        var capMesh = new THREE.Mesh(capGeom, mat);
+        capMesh.rotation.x = Math.PI / 2;
+        mesh.add(capMesh);
+
+        return base; 
+    }
+
+    // Create a lamp arm with specified radius and height
+    function createArm(radius, height)
+    {
+
+        var arm = new THREE.Object3D();
+
+        var mat = new THREE.MeshPhongMaterial( { color: "skyblue" } );
+
+        // CylinderGeometry(radiusTop, radiusBottom, height) 
+        var geom = new THREE.CylinderGeometry(radius, radius, height, 64, 64);
+        var mesh = new THREE.Mesh(geom, mat);
+        mesh.position.y += height/2;
+        arm.add(mesh);
+
+        return arm;
+    }
+
+    // Create the lamp shade with specified radius and height
+    function createShade(radius, height)
+    {
+        var shade = new THREE.Object3D();
+
+        var mat = new THREE.MeshPhongMaterial( { color: 0xFF7F50, side: THREE.DoubleSide } ); // both sides colored
+
+         // ConeGeometry(radius, height, radialSeg, heightSeg, open?) 
+        var geom = new THREE.ConeGeometry(radius, height, 16, 1, true);
+        var mesh = new THREE.Mesh(geom, mat);
+        mesh.position.y += height/2;
+        mesh.rotation.z = Math.PI;
+        shade.add(mesh);        
+
+        // SpotLight (color, intensity)
+        var spotLight = new THREE.SpotLight("white", 0.8); 
+
+        // set spotlight position, direction and angle
+        spotLight.position.set(0, 0, 0);            // position, relative to parent shade
+        spotLight.target.position.set(0,height,0);  // direction, relative to parent shade
+        spotLight.angle = Math.atan(radius/height); // to match the shade angle 
+        spotLight.penumbra = 0.1;                   // outer 10% of spotlight cone fades out
+
+        // add both spotlight and its target to the scene
+        shade.add(spotLight);
+        shade.add(spotLight.target);
+
+        return shade;
+    }
+
+
+    // Create the scene. This function is called once, as soon as the page loads.
+    // The renderer has already been created before this function is called.
+    function createScene() {
+        
+        renderer.setClearColor(0); // Set background color (0, or 0x000000, is black).
+        scene = new THREE.Scene(); // Create a new scene which we can add objects to.
+
+        // Build the lamp parts
+        base = createBase(3.5, 1.2);
+        lowerArm = createArm(0.5, 5);
+        upperArm = createArm(0.5, 5);
+        shade = createShade(2.5, 4);
+
+        // Build the lamp hierarchal structure 
+        lamp = new THREE.Object3D();
+        scene.add(lamp);        // add lamp as a child of the entire scene
+        lamp.add(base);         // add base as a child of lamp    
+        lamp.add(lowerArm);     // add lowerArm as a child of lamp (not base, base can rotate independently)
+        lowerArm.add(upperArm); // add upperArm as a child of lowerArm
+        upperArm.add(shade);    // add shade as a child of upperArm
+  
+        // position children relative to parents
+        base.position.y += 1.2;
+        upperArm.position.y += 5;
+        shade.position.y += 5;
+
+        // Build the mini lamp
+        miniBase = createBase(1.75, 0.6);
+        miniLowerArm = createArm(0.25, 2.5);
+        miniUpperArm = createArm(0.25, 2.5);
+        miniShade = createShade(1.25, 2);
+
+        // Build the lamp hierarchal structure 
+        miniLamp = new THREE.Object3D();
+        scene.add(miniLamp);        // add lamp as a child of the entire scene
+        miniLamp.add(miniBase);         // add base as a child of lamp    
+        miniLamp.add(miniLowerArm);     // add lowerArm as a child of lamp (not base, base can rotate independently)
+        miniLowerArm.add(miniUpperArm); // add upperArm as a child of lowerArm
+        miniUpperArm.add(miniShade);    // add shade as a child of upperArm
+  
+        // position children relative to parents
+        miniBase.position.y += 0.6;
+        miniUpperArm.position.y += 2.5;
+        miniShade.position.y += 2.5;
+
+        miniLamp.rotation.y += Math.PI/2;
+        miniLamp.position.x += 5;
+        miniLamp.position.z -= 10;
+        miniLamp.position.y -= 3.9;
+
+        // rotate lamp parts
+        miniLowerArm.rotation.z -= 0.3;
+        miniUpperArm.rotation.z -= 0.8;
+        miniShade.rotation.z -= 1.4;
+
+        // add plane for the lamp to sit on
+        var geometry = new THREE.PlaneGeometry( 100, 100); 
+        var material = new THREE.MeshPhongMaterial({color: 0xCCAAAA, side: THREE.DoubleSide});
+        var plane = new THREE.Mesh( geometry, material );
+        scene.add( plane );
+        plane.position.y -= 4+0.01;
+        plane.rotation.x = Math.PI/2;
+    }
+ 
+    // add lights to the scene
+    function createLights()
+    {
+        // DirectionalLight (color, intensity)
+        eyeLight = new THREE.DirectionalLight("white", 0.8); 
+        eyeLight.position.set(camera.position.x, camera.position.y, camera.position.z );
+        scene.add(eyeLight);
+ 
+        // DirectionalLight (color, intensity)
+        var topLight = new THREE.DirectionalLight( "white", 0.5 ); 
+        topLight.position.set(0, 5, 0);
+        scene.add( topLight );
+    }
+
+    function update() {
+        mouse.update();
+    }
+
+
+    // Render the scene. This is called for each frame of the animation.
+    function render() {
+
+        // Loop
+        requestAnimationFrame(render);
+
+        eyeLight.position.set(camera.position.x, camera.position.y, camera.position.z );
+
+        var keys = keyframeInterp(keyframes, 4, clock.getElapsedTime());
+
+        lamp.position.x = keys[0];
+        lamp.position.y = keys[1];
+        base.rotation.z = keys[2];
+        lowerArm.rotation.z = keys[3];
+        upperArm.rotation.z = keys[4];
+        shade.rotation.z = keys[5];
+
+        var miniKeys = keyframeInterp(miniKeyframes, 4, clock.getElapsedTime());
+        miniShade.rotation.z = miniKeys[0];
+        miniShade.rotation.y = miniKeys[1]; 
+        miniUpperArm.rotation.z = miniKeys[2];
+
+
+        // Re-render the scene
+        renderer.render(scene, camera);
+
+        update();
+    }
+
+    //----------------------------------------------------------------------------------
+
+    // The init() function is called by the onload event when the document has loaded.
+    function init() {
+        try {
+            canvas = document.getElementById("glcanvas");
+            renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true} );
+        }
+        catch (e) {
+            document.getElementById("canvas-holder").innerHTML = "<h3><b>WebGL is not available.</b><h3>";
+            return;
+        }
+    
+        // create camera
+        createCamera();
+        
+        // create scene 
+        createScene();
+
+        // create lights 
+        createLights();
+
+        // render scene
+        render();
+    }
+
+</script>
+
+</head>
+<body onload="init()">
+<div id="canvas-holder">
+    <canvas id="glcanvas" width="600" height="400"></canvas>
+</div>
+</body>
+</html>
