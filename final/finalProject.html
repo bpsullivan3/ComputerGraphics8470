@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<head>
+<title>Textured 3D Scene</title>
+<script src="../lib/three.js"></script>
+<script src="../lib/OrbitControls.js"></script>
+<script src="../lib/GLTFLoader.js"></script>
+<script src="../lib/Audio.js"></script>
+<script src="../lib/AudioListener.js"></script>
+<script src="../lib/AudioLoader.js"></script>
+
+<script>
+    var scene, camera, renderer; // Three.js rendering basics.
+
+    // Keep track of time
+    var clock = new THREE.Clock();  
+
+    // Time at the beginning of animation 
+    var startTime = clock.getElapsedTime();
+
+    var canvas; // The canvas on which the image is rendered.
+
+    var mouse; // Used to navigate the scene with the mouse
+
+    var texLoader;  // Texture loader
+
+    var flagPole;
+    var pole, flag;
+    var rocket;
+    var neil; // Astronaut object, Neil Armstrong
+
+    /*
+    KEYFRAMES FOR ALL ANIMATIONS
+    */
+    // timestamp, rocket.y, rocket.rotation.y
+    var rocketFrames = [
+        [0.00, 36, 0],
+        [0.04, 30, Math.PI/6],
+        [0.08, 24, 2*Math.PI/6],
+        [0.12, 20, Math.PI/2],
+        [0.16, 16, 4*Math.PI/6],
+        [0.20, 12, 5*Math.PI/6],
+        [0.24, 8, Math.PI],
+        [0.28, 4, 7*Math.PI/6],
+        [0.32, 2, 8*Math.PI/6],
+        [0.36, -0, 3*Math.PI/2],
+        [0.40, -2, 10*Math.PI/6],
+        [0.44, -3, 11*Math.PI/6],
+        [0.48, -4, 2*Math.PI],
+        [0.52, -4, 2*Math.PI],
+        [0.56, -4, 2*Math.PI],
+        [0.60, -4, 2*Math.PI],
+        [0.64, -4, 2*Math.PI],
+        [0.68, -4, 2*Math.PI],
+        [0.72, -4, 2*Math.PI],
+        [0.76, -4, 2*Math.PI],
+        [0.80, -4, 2*Math.PI],
+        [0.84, -4, 2*Math.PI],
+        [0.88, -4, 2*Math.PI],
+        [0.92, -4, 2*Math.PI],
+        [0.96, -4, 2*Math.PI],
+        [1.00, -4, 2*Math.PI],
+    ];
+
+    // timestamp, neil.y, neil.x, neil.z
+    var neilFrames = [
+        [0.00, 34, -20, -20],
+        [0.04, 29, -20, -20],
+        [0.08, 24, -20, -20],
+        [0.12, 19, -20, -20],
+        [0.16, 16, -20, -20],
+        [0.20, 12, -20, -20],
+        [0.24, 8, -20, -20],
+        [0.28, 6, -20, -20],
+        [0.32, 4, -20, -20],
+        [0.36, 3, -20, -20],
+        [0.40, 2, -20, -20],
+        [0.44, 1, -20, -20],
+        [0.48, 0, -20, -20],
+        [0.52, -1, -18, -18],
+        [0.56, -2, -16, -16],
+        [0.60, -3, -14, -14],
+        [0.64, -4, -12, -12],
+        [0.68, -2, -8, -8],
+        [0.72, 0, -4, -4],
+        [0.76, -2, 0, 0],
+        [0.80, -4, 4, 4],
+        [0.84, -2, 8, 8],
+        [0.88, 0, 12, 12],
+        [0.92, -2, 14, 14],
+        [0.96, -4, 16, 16],
+        [1.00, -4, 16, 16],
+    ];
+
+    // timestamp, flagPole.y
+    var flagPoleFrames = [
+        [0.00, 50],
+        [0.04, 50],
+        [0.08, 50],
+        [0.12, 50],
+        [0.16, 50],
+        [0.20, 50],
+        [0.24, 50],
+        [0.28, 50],
+        [0.32, 50],
+        [0.36, 50],
+        [0.40, 50],
+        [0.44, 50],
+        [0.48, 50],
+        [0.52, 50],
+        [0.56, 50],
+        [0.60, 50],
+        [0.64, 50],
+        [0.68, 50],
+        [0.72, 50],
+        [0.76, 50],
+        [0.80, 50],
+        [0.84, 50],
+        [0.88, 50],
+        [0.92, 50],
+        [0.96, -4],
+        [1.00, -4],
+    ];
+
+    // keyframes, duration of one animation cycle (in seconds), current time
+    function keyframeInterp(keyframes, cycleTime, currentTime) {
+        var keys=[];  // array of interpolated values
+        var nKeys = keyframes[0].length-1;  // number of keys
+
+        // find time elapsed within the current cycle and scale to [0,1]
+        var time = ((currentTime - startTime) % cycleTime) / cycleTime; 
+
+        // find the next keyframe based on time
+        for (var i = 0; i < keyframes.length; i++) {
+            if (time < keyframes[i][0]) break;
+        }
+        i = i-1; // previous keyframe is at index i-1
+
+        // scale interpolation parameter t to interval [0,1]
+        var t = (time - keyframes[i][0]) / (keyframes[i+1][0] - keyframes[i][0]); 
+
+        // linear interpolation between keyframes i and i+1 
+        for(var j = 1; j <= nKeys; j++)
+            keys.push((1-t) * keyframes[i][j] + t * keyframes[i+1][j]); 
+
+        return keys;
+    }
+
+    // Create a camera, sitting on the positive z-axis.  The camera is not part of the scene
+    function createCamera() {
+        camera = new THREE.PerspectiveCamera(40, canvas.width/canvas.height, 0.1, 500);
+        camera.position.set(-20,9,33);
+        camera.lookAt(new THREE.Vector3(0,0,0));
+
+        // Add orbit control to allow the camera orbit around
+        mouse = new THREE.OrbitControls(camera, renderer.domElement);
+    }
+
+    function createPole(radius, height) {
+        var pole = new THREE.Object3D();
+
+        texLoader = new THREE.TextureLoader();
+        var poleTexture = texLoader.load("../homework/gray-stripes.jpg");
+        poleTexture.center.set(0.5, 0.5);    // default rotation center is (0,0), which is not what you want
+        poleTexture.rotation = Math.PI/2;
+        var mat = new THREE.MeshPhongMaterial( { map: poleTexture, color: "lightblue" } );
+
+        // CylinderGeometry(radiusTop, radiusBottom, height) 
+        var geom = new THREE.CylinderGeometry(radius, radius, height, 64, 64);
+        var mesh = new THREE.Mesh(geom, mat);
+        mesh.position.y += height/2;
+        pole.add(mesh);
+
+        return pole;
+    }
+
+    function createFlag(length, width) {
+        var flag = new THREE.Object3D();
+
+        texLoader = new THREE.TextureLoader();
+        var america = texLoader.load("../homework/usa.jpg");
+        var mat = new THREE.MeshPhongMaterial({map : america, side: THREE.DoubleSide});
+
+        var geom = new THREE.PlaneGeometry(length, width);
+        var flagMesh = new THREE.Mesh(geom, mat);
+        flagMesh.position.x += length/2;
+        flag.add(flagMesh);
+
+        return flag;
+    }
+
+    function createBackground(length, width, height)
+    {
+        var background = new THREE.Object3D(); 
+
+        texLoader = new THREE.TextureLoader();
+        var moonTexture = texLoader.load("../homework/moon.png");
+        var moonMat =  new THREE.MeshPhongMaterial({ side: THREE.DoubleSide, map : moonTexture });
+
+        var spaceTexture = texLoader.load("../homework/space.jpg");
+        spaceTexture.wrapS = THREE.RepeatWrapping;
+        spaceTexture.wrapT = THREE.RepeatWrapping;
+        spaceTexture.repeat.set( 2, 3 ); // twice in U and three times in V
+        var spaceMat = new THREE.MeshPhongMaterial({ side: THREE.DoubleSide, map : spaceTexture});
+
+        // create ground
+        var geom = new THREE.PlaneGeometry(length, width); 
+        var ground = new THREE.Mesh( geom, moonMat);
+        ground.rotation.x = Math.PI/2;
+        background.add(ground);
+
+        // create walls
+        var wall1 = new THREE.Mesh( geom, spaceMat);
+        wall1.position.y += width/2;
+        wall1.position.z -= length/2;
+        background.add(wall1);
+
+        var wall2 = new THREE.Mesh( geom, spaceMat);
+        wall2.position.y += width/2;
+        wall2.rotation.y += Math.PI/2;
+        wall2.position.x += length/2;
+        background.add(wall2);
+
+        return background;
+
+    }
+
+    function loadRocket() {
+        const loader = new THREE.GLTFLoader();
+        const url = './rocket.glb';
+
+        // function to execute when model has been loaded 
+        function onLoad ( gltf ) {
+            // console.log( gltf.scene);
+            rocket = gltf.scene;
+            rocket.scale.set(5.0, 5.0, 5.0);
+            rocket.position.set(-20, 0, -20);
+
+            var spot1 = new THREE.SpotLight("red", 2); 
+
+            //set spotLight position, direction and angle
+            spot1.position.set(0.25, 1, 0);            // relative to parent shade
+            spot1.target.position.set(0,0,0);  // relative to parent shade
+            spot1.penumbra = 0.1;       // outer 10% of spotlight cone fades out
+
+            var spot2 = new THREE.SpotLight("red", 2); 
+
+            //set spotLight position, direction and angle
+            spot2.position.set(-0.25, 1, 0);            // relative to parent shade
+            spot2.target.position.set(0,0,0);  // relative to parent shade
+            spot2.penumbra = 0.1;       // outer 10% of spotlight cone fades out
+
+            var spot3 = new THREE.SpotLight("red", 2); 
+
+            //set spotLight position, direction and angle
+            spot3.position.set(0, 1, 0.25);            // relative to parent shade
+            spot3.target.position.set(0,0,0);  // relative to parent shade
+            spot3.penumbra = 0.1;       // outer 10% of spotlight cone fades out
+
+            var spot4 = new THREE.SpotLight("red", 2); 
+
+            //set spotLight position, direction and angle
+            spot4.position.set(0, 1, -0.25);            // relative to parent shade
+            spot4.target.position.set(0,0,0);  // relative to parent shade
+            spot4.penumbra = 0.1;       // outer 10% of spotlight cone fades out
+
+            rocket.add(spot1);
+            rocket.add(spot1.target);
+            rocket.add(spot2);
+            rocket.add(spot2.target);
+            rocket.add(spot3);
+            rocket.add(spot3.target);
+            rocket.add(spot4);
+            rocket.add(spot4.target);
+            scene.add(rocket);
+        }       
+        loader.load(url, onLoad);
+    }
+
+    function loadNeil() {
+        const loader = new THREE.GLTFLoader();
+        const url = './astronaut.glb';
+
+        // function to execute when model has been loaded 
+        function onLoad ( gltf ) {
+            // console.log( gltf.scene);
+            neil = gltf.scene;
+            neil.scale.set(2.0, 2.0, 2.0);
+            neil.rotation.y -= Math.PI/4
+            scene.add(neil);
+        }       
+        loader.load(url, onLoad);
+    }
+
+    // Create the scene. This function is called once, as soon as the page loads.
+    // The renderer has already been created before this function is called.
+    function createScene() {
+        
+        renderer.setClearColor(0); // Set background color (0, or 0x000000, is black).
+        scene = new THREE.Scene(); // Create a new scene which we can add objects to.
+
+        texLoader = new THREE.TextureLoader(); // used to create the parts below
+
+        // Create Flag
+        pole = createPole(0.4, 15);
+        flag = createFlag(10, 7.5);
+        flagPole = new THREE.Object3D();
+        scene.add(flagPole);
+        flagPole.add(pole);
+        pole.add(flag);
+
+        flag.position.y += 15 - (7.5 / 2);
+        flag.rotation.y -= Math.PI/4;
+
+        flagPole.position.set(20, -4, 20);
+
+        loadRocket();
+        loadNeil();
+
+        dirLight = new THREE.DirectionalLight("white", 0.2); 
+        dirLight.position.set( 0, 0, 1 );
+        scene.add(dirLight);
+
+        // create background
+        var background = createBackground(80, 80, 40);
+        background.position.y -= 4+0.01;
+        scene.add(background);
+    }
+ 
+    // add lights to the scene
+    function createLights()
+    {
+        // Ambient Light (color, intensity)
+        var ambient = new THREE.AmbientLight(0x404040); // soft white
+        scene.add(ambient);
+
+        // DirectionalLight (color, intensity) in the direction the camera faces
+        var eyeLight = new THREE.DirectionalLight( "white", 0.7 );   
+        eyeLight.position.set(camera.position.x,camera.position.y,camera.position.z);  // camera viewpoint
+        scene.add(eyeLight);
+
+        // Dim DirectionalLight (color, intensity) shining from above
+        var topLight = new THREE.DirectionalLight( "white", 0.3 ); 
+        topLight.position.set(0,20,0);
+        scene.add( topLight );
+    }
+
+    // Render the scene. This is called for each frame of the animation.
+    function render() {
+
+        // Loop
+        requestAnimationFrame(render);
+
+        var rocketKeys = keyframeInterp(rocketFrames, 30, clock.getElapsedTime());
+        rocket.position.y = rocketKeys[0];
+        rocket.rotation.y = rocketKeys[1];
+
+        var neilKeys = keyframeInterp(neilFrames, 30, clock.getElapsedTime());
+        neil.position.y = neilKeys[0];
+        neil.position.x = neilKeys[1];
+        neil.position.z = neilKeys[2];
+
+        var flagPoleKeys = keyframeInterp(flagPoleFrames, 30, clock.getElapsedTime());
+        flagPole.position.y = flagPoleKeys[0];
+
+        // Re-render the scene
+        renderer.render(scene, camera);
+
+        mouse.update();
+    }
+
+    //----------------------------------------------------------------------------------
+
+    // The init() function is called by the onload event when the document has loaded.
+    function init() {
+        try {
+            canvas = document.getElementById("glcanvas");
+            renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true} );
+        }
+        catch (e) {
+            document.getElementById("canvas-holder").innerHTML = "<h3><b>WebGL is not available.</b><h3>";
+            return;
+        }
+    
+        // create camera
+        createCamera();
+        
+        // create scene 
+        createScene();
+
+        // create lights 
+        createLights();
+
+        // create an AudioListener and add it to the camera
+        var listener = new THREE.AudioListener();
+        camera.add( listener );
+
+        // create a global audio source
+        var sound = new THREE.Audio( listener );
+
+        // load a sound and set it as the Audio object's buffer
+        var audioLoader = new THREE.AudioLoader();
+        audioLoader.load( './62284main_onesmall2.wav', function( buffer ) {
+            sound.setBuffer( buffer );
+            sound.setLoop( true );
+            sound.setVolume( 0.5 );
+            sound.duration(30);
+            sound.play();
+        });
+
+        // render scene
+        render();
+    }
+
+</script>
+
+</head>
+<body onload="init()">
+<div id="canvas-holder">
+    <canvas id="glcanvas" width="600" height="400"></canvas>
+</div>
+</body>
+</html>
